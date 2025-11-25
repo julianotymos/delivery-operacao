@@ -26,10 +26,12 @@ def tab_revenue_analysis(start_date: date, end_date: date, sales_channel: str , 
         with col1:
             st.metric("💰 Faturamento", f"{total_row['Faturamento']:.2f}")
             st.metric("🆕 Novos Clientes", int(total_row['Novos Clientes']))
+            st.metric("⏳ Pedidos Atrasados(%) TP>7", f"{total_row['TP7_TOTAL']/total_row['Qtd. Pedidos']:.2f}%")
 
         with col2:
             st.metric("💰 Ticket Médio", f"{total_row['Faturamento']/total_row['Qtd. Pedidos']:.2f}")
             st.metric("🔁 Clientes Recorrentes", int(total_row['Clientes Recorrentes']))
+            st.metric("♻️ TP atualizado (%)", f"{total_row['QTY_PREP_TIME']/total_row['Qtd. Pedidos']:.2f}%")
 
 
         with col3:
@@ -49,7 +51,8 @@ def tab_revenue_analysis(start_date: date, end_date: date, sales_channel: str , 
         st.subheader("Analise periodo")
         if not revenue_df.empty:
             selection = st.dataframe(
-                revenue_df,
+                #revenue_df,
+                revenue_df.drop(columns=["QTY_PREP_TIME"], errors="ignore"),
                 use_container_width=True,
                 on_select="rerun",  # Roda o script novamente quando uma linha é clicada
                 selection_mode="single-row",

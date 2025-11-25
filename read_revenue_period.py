@@ -47,21 +47,16 @@ def read_revenue_period(start_date: date, end_date: date, sales_channel: str = N
         DATE(ot.CREATED_AT, "America/Sao_Paulo") AS order_date,
         STRING_AGG(DISTINCT OT.SALES_CHANNEL, ', ' ORDER BY OT.SALES_CHANNEL) AS Canais,
         SUM(bi.sub_total_value) AS revenue,
-
-
-
-
-
-
-
-
         COUNT(1) AS items,
         QOT.QTY_PEDIDOS AS orders_count,
         QOT.NOVOS_CLIENTES AS new_customers,
         QOT.CLIENTES_RECORRENTES AS returning_customers ,
         ROUND( ANY_VALUE( QOT.TP7)/QOT.QTY_PEDIDOS * 100 ,2) AS TP7,
        ROUND( ANY_VALUE(  QOT.TP6)/QOT.QTY_PEDIDOS * 100,2) AS TP6,
-       ROUND( ANY_VALUE( QOT.TP5) /QOT.QTY_PEDIDOS * 100 ,2)AS TP5
+       ROUND( ANY_VALUE( QOT.TP5) /QOT.QTY_PEDIDOS * 100 ,2) AS TP5 ,
+        ( ANY_VALUE( QOT.QTY_PREP_TIME) * 100 ) AS QTY_PREP_TIME ,
+        ( ANY_VALUE( QOT.TP7) * 100 ) AS TP7_TOTAL 
+
 
     FROM BAG_ITEMS bi
     INNER JOIN ORDERS_TABLE ot ON ot.id = bi.ORDER_ID
@@ -97,7 +92,13 @@ INNER JOIN SALES_CHANNEL CH ON CH.ID = P.SALES_CHANNEL) p
                  ELSE 0 END ) AS TP6 ,
                  SUM(CASE WHEN ot.PREPARATION_TIME > 5
                  THEN 1
-                 ELSE 0 END ) AS TP5
+                 ELSE 0 END ) AS TP5 ,
+                  SUM(
+               CASE 
+                   WHEN ot.PREPARATION_TIME IS NOT NULL THEN 1
+                   ELSE 0
+               END
+           ) AS QTY_PREP_TIME
         FROM ORDERS_TABLE ot
         WHERE DATE(ot.CREATED_AT, "America/Sao_Paulo") BETWEEN '{start_date_str}' AND '{end_date_str}'
         {where_channel_clause} -- Adicionei o filtro aqui
