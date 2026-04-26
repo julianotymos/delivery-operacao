@@ -8,10 +8,8 @@ from read_product_performance import read_product_performance
 
 def tab_revenue_analysis(start_date: date, end_date: date, sales_channel: str , customer_type: str = None):
     """
-    Exibe o conteúdo da aba "Resumo Geral" do dashboard de vendas,
-    incluindo métricas de faturamento, pedidos e produtos.
+    Exibe o resumo geral com todas as métricas financeiras e operacionais agrupadas.
     """
-    #st.header(f" {sales_channel}")
 
     # ---- CHAMADAS DE DADOS ----
     revenue_df = read_revenue_period(start_date, end_date, sales_channel , customer_type = customer_type)
@@ -20,64 +18,53 @@ def tab_revenue_analysis(start_date: date, end_date: date, sales_channel: str , 
         # ---- TOTAL (última linha somada) ----
         total_row = revenue_df.sum(numeric_only=True)
 
-        # Criar 8 colunas
-        col1, col2, col3, col4  = st.columns(4)
+        # Primeira Linha: Vendas e Clientes
+        st.markdown("#### 💰 Resumo Financeiro e Clientes")
+        c1, c2, c3, c4, c5 = st.columns(5)
+        c1.metric("💰 Faturamento", f"R$ {total_row['Faturamento']:,.2f}")
+        c2.metric("👥 Total Pedidos", int(total_row['Qtd. Pedidos']))
+        c3.metric("🆕 Novos Clientes", int(total_row['Novos Clientes']))
+        c4.metric("🔁 Clientes Recorrentes", int(total_row['Clientes Recorrentes']))
+        c5.metric("📦 Itens Vendidos", int(total_row['Itens Vendidos']))
 
-        with col1:
-            st.metric("💰 Faturamento", f"{total_row['Faturamento']:.2f}")
-            st.metric("🆕 Novos Clientes", int(total_row['Novos Clientes']))
-            st.metric("⏳ Pedidos Atrasados(%) TP>7", f"{total_row['TP7_TOTAL']/total_row['Qtd. Pedidos']:.2f}%")
+        # Segunda Linha: Operação e Eficiência
+        st.markdown("#### ⏱️ Performance Operacional (Eficiência)")
+        e1, e2, e3, e4, e5 = st.columns(5)
+        
+        pedidos_com_tempo = total_row['Pedidos c/ Tempo']
+        efic_5 = (total_row['Pedidos ≤ 5min'] / pedidos_com_tempo * 100) if pedidos_com_tempo > 0 else 0
+        efic_6 = (total_row['Pedidos ≤ 6min'] / pedidos_com_tempo * 100) if pedidos_com_tempo > 0 else 0
+        efic_7 = (total_row['Pedidos ≤ 7min'] / pedidos_com_tempo * 100) if pedidos_com_tempo > 0 else 0
 
-        with col2:
-            st.metric("💰 Ticket Médio", f"{total_row['Faturamento']/total_row['Qtd. Pedidos']:.2f}")
-            st.metric("🔁 Clientes Recorrentes", int(total_row['Clientes Recorrentes']))
-            st.metric("♻️ TP atualizado (%)", f"{total_row['QTY_PREP_TIME']/total_row['Qtd. Pedidos']:.2f}%")
-
-
-        with col3:
-            st.metric("👥 Pedidos", int(total_row['Qtd. Pedidos']))
-            st.metric("🔁 % Clientes Recorrentes", f"{((int(total_row['Clientes Recorrentes'])/(int(total_row['Clientes Recorrentes'])+ int(total_row['Novos Clientes'])))*100):.2f}%")
-
-
-        with col4:
-            st.metric("📦 Itens Vendidos", int(total_row['Itens Vendidos']))
-            
-
-
+        e1.metric("⏱️ Pedidos c/ Tempo", int(pedidos_com_tempo))
+        e2.metric("🚫 Pedidos s/ Tempo", int(total_row['Pedidos s/ Tempo']))
+        e3.metric("✅ Eficiência ≤ 5min", f"{efic_5:.2f}%")
+        e4.metric("✅ Eficiência ≤ 6min", f"{efic_6:.2f}%")
+        e5.metric("✅ Eficiência ≤ 7min", f"{efic_7:.2f}%")
             
         st.markdown("---")
 
         # ---- Analise periodo ----
-        st.subheader("Analise periodo")
+        st.subheader("Análise Detalhada do Período")
         if not revenue_df.empty:
             selection = st.dataframe(
-                #revenue_df,
-                revenue_df.drop(columns=["QTY_PREP_TIME"], errors="ignore"),
+                revenue_df,
                 use_container_width=True,
-                on_select="rerun",  # Roda o script novamente quando uma linha é clicada
+                on_select="rerun",
                 selection_mode="single-row",
                 hide_index=True
             )
             
-            # Exibe as transações do cliente selecionado
             if selection["selection"]["rows"]:
                 selected_index = selection["selection"]["rows"][0]
                 selected_row = revenue_df.iloc[[selected_index]]
-                
                 order_date = selected_row["Data"].iloc[0]
 
-                st.subheader(f"Transações de {order_date}")
+                st.subheader(f"Pedidos do dia {order_date.strftime('%d/%m/%Y')}")
                 transactions_df = read_order_performance(order_date = order_date , sales_channel=sales_channel , customer_type= customer_type)
-                
                 if not transactions_df.empty:
                     st.dataframe(transactions_df, use_container_width=True , hide_index=True)
-                else:
-                    st.info("Não há transações para esta data.")
         else:
             st.info("Nenhum dado encontrado no período.")
-
-
-
-
     else:
-        st.warning("⚠️ Não há dados de vendas para o período selecionado. Por favor, ajuste o filtro de datas.")
+        st.warning("⚠️ Não há dados de vendas para o período selecionado.")
