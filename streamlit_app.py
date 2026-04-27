@@ -44,6 +44,7 @@ st.title(f"📊 Performance Delivery: {channel_display_name}")
 
 # ... (Restante do código continua a partir daqui)
 f_customer_type = st.sidebar.selectbox("Tipo de Cliente:", customer_type)
+f_use_estimated = st.sidebar.checkbox("Considerar Tempo Estimado na Eficiência", value=True)
 
 if start_date > end_date:
     st.sidebar.error("⚠️ Erro: A data inicial não pode ser posterior à data final.")
@@ -53,14 +54,14 @@ else:
 
     # ---- Aba de Resumo de Receita ----
     with tab_revenue:
-        tab_revenue_analysis(start_date, end_date, sales_channel=f_sales_channel , customer_type= f_customer_type)
+        tab_revenue_analysis(start_date, end_date, sales_channel=f_sales_channel , customer_type= f_customer_type, use_estimated=f_use_estimated)
 
     # ---- Aba de Performance de Produtos ----
     with tab_products:
         product_df = tab_product_analysis(start_date, end_date, f_sales_channel , customer_type= f_customer_type )
         
     with tab_oper:
-        tab_operational_analysis(sales_channel=f_sales_channel)
+        tab_operational_analysis(sales_channel=f_sales_channel, use_estimated=f_use_estimated)
 
     with tab_subitem:
         product_df = tab_subitem_analysis(start_date, end_date, f_sales_channel , customer_type= f_customer_type)
