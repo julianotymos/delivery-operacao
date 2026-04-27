@@ -21,8 +21,9 @@ st.set_page_config(
 )
 # --- Barra Lateral para Filtros e Status ---
 st.sidebar.header("🗓️ Período de Análise")
-sales_channels = ["","iFood", "99food"]
-customer_type = ["","Novo", "Recorrente"]
+sales_channels = ["", "iFood", "99food", "keeta", "iFood + 99food"]
+customer_type = ["", "Novo", "Recorrente"]
+
 
 start_date = st.sidebar.date_input("Data Inicial", (datetime.now() - timedelta(days=1)).date())
 end_date = st.sidebar.date_input("Data Final", datetime.now().date())

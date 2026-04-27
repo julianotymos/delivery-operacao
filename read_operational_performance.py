@@ -5,7 +5,11 @@ from get_bigquery_client import get_bigquery_client
 @st.cache_data(ttl=3600, show_spinner="Calculando performance operacional...")
 def read_operational_performance(sales_channel: str = None, use_estimated: bool = True):
     client = get_bigquery_client()
-    where_channel_clause = f"AND ot.SALES_CHANNEL = '{sales_channel}'" if sales_channel else ""
+    where_channel_clause = ""
+    if sales_channel == "iFood + 99food":
+        where_channel_clause = "AND ot.sales_channel IN ('iFood', '99food')"
+    elif sales_channel:
+        where_channel_clause = f"AND ot.SALES_CHANNEL = '{sales_channel}'"
 
     if use_estimated:
         time_field = "COALESCE(NULLIF(ot.preparation_time, 0), ot.estimated_prep_time)"

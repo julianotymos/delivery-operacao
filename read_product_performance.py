@@ -18,7 +18,9 @@ def read_product_performance(start_date: date, end_date: date, sales_channel: st
 
     # Cláusula WHERE condicional para o canal de vendas
     where_channel_clause = ""
-    if sales_channel:
+    if sales_channel == "iFood + 99food":
+        where_channel_clause = "AND ot.SALES_CHANNEL IN ('iFood', '99food')"
+    elif sales_channel:
         where_channel_clause = f"AND ot.SALES_CHANNEL = '{sales_channel}'"
         
     where_customer_clause = ""

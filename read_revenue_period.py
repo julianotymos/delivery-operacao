@@ -8,7 +8,11 @@ def read_revenue_period(start_date: date, end_date: date, sales_channel: str = N
     start_date_str = start_date.strftime("%Y-%m-%d")
     end_date_str = end_date.strftime("%Y-%m-%d")
 
-    where_channel_clause = f"AND ot.sales_channel = '{sales_channel}'" if sales_channel else ""
+    where_channel_clause = ""
+    if sales_channel == "iFood + 99food":
+        where_channel_clause = "AND ot.sales_channel IN ('iFood', '99food')"
+    elif sales_channel:
+        where_channel_clause = f"AND ot.sales_channel = '{sales_channel}'"
 
     where_customer_clause = ""
     if customer_type == "Novo":

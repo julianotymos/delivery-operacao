@@ -14,7 +14,7 @@ def tab_product_analysis(start_date: date, end_date: date, sales_channel: str , 
     product_df_performance = read_product_performance(start_date, end_date, sales_channel , customer_type = customer_type)
     product_df ,product_df_0  = read_product(start_date=start_date, end_date=end_date, sales_channel=sales_channel)
     #print(product_df)
-    product_df_display = product_df.drop(columns=['ID', 'CATEGORY'])
+    product_df_display = product_df.drop(columns=['ID', 'CATEGORY'], errors='ignore')
 
     if not product_df_performance.empty:
         

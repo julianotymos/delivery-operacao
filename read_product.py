@@ -19,7 +19,9 @@ def read_product(
     
     where_clause = "WHERE 1=1"
     
-    if sales_channel:
+    if sales_channel == "iFood + 99food":
+        where_clause += " AND SC.SALES_CHANNEL_ID IN ('iFood', '99food')"
+    elif sales_channel:
         where_clause += f" AND SC.SALES_CHANNEL_ID = '{sales_channel}'"
     
     if product_name:
