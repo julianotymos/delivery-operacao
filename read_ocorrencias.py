@@ -77,7 +77,11 @@ def read_ocorrencias() -> pd.DataFrame:
         df = client.query(query).to_dataframe()
         if not df.empty:
             df["data_ocorrencia"] = pd.to_datetime(df["data_ocorrencia"]).dt.date
-            df["created_at"] = pd.to_datetime(df["created_at"]).dt.tz_localize(None)
+            df["created_at"] = (
+                pd.to_datetime(df["created_at"])
+                .dt.tz_convert("America/Sao_Paulo")
+                .dt.tz_localize(None)
+            )
         return df
     except Exception as e:
         st.error(f"Erro ao buscar ocorrências: {e}")
