@@ -137,7 +137,7 @@ def tab_ocorrencias():
             "Cadastrado em":    st.column_config.TextColumn("Cadastrado em", disabled=True),
             "id":               None,
         },
-        width='stretch',
+        use_container_width=True,
         hide_index=True,
         key="tabela_ocorrencias",
     )

@@ -92,7 +92,7 @@ def tab_bonus_analysis(sales_channel: str = None, use_estimated: bool = True):
             lambda v: "color: #d62728; font-weight: bold" if isinstance(v, (int, float)) and v > 0 else "",
             subset=["Perdido Fechamento (R$)"]
         ),
-        width='stretch',
+        use_container_width=True,
         hide_index=True,
     )
 

@@ -43,7 +43,7 @@ def tab_operational_analysis(sales_channel: str = None, use_estimated: bool = Tr
                 '% <= 6 min': '{:.2f}%',
                 '% <= 7 min': '{:.2f}%'
             }), 
-            width='stretch',
+            use_container_width=True,
             hide_index=True
         )
         
