@@ -44,3 +44,4 @@ google-cloud-bigquery==3.35.1
 google-cloud-core==2.4.3
 google-crc32c==1.7.1
 db-dtypes
+google-cloud-bigquery-storage

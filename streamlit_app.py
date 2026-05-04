@@ -7,10 +7,10 @@ import streamlit as st
 from read_process_last_run import read_process_last_run
 from datetime import datetime, timedelta
 from typing import List
-from tab_revenue_analysis import tab_revenue_analysis  # <-- substitui tab_sales_total
-from tab_product_analysis import tab_product_analysis  # <-- substitui tab_sales_total
-from tab_subitem_analysis import tab_subitem_analysis
+from tab_revenue_analysis import tab_revenue_analysis
 from tab_operational_analysis import tab_operational_analysis
+from tab_bonus_analysis import tab_bonus_analysis
+from tab_ocorrencias import tab_ocorrencias
 
 # --- Início da Aplicação Streamlit ---
 
@@ -51,21 +51,19 @@ if start_date > end_date:
     st.sidebar.error("⚠️ Erro: A data inicial não pode ser posterior à data final.")
 else:
     # --- Criação das Abas ---
-    tab_revenue, tab_products, tab_oper, tab_subitem = st.tabs(["Performance Vendas", "Performance de Produtos", "Performance Operacional", "Preferencias Cliente"])
+    tab_revenue, tab_oper, tab_bonus, tab_ocorr = st.tabs(["Performance Vendas", "Performance Operacional", "🎯 Bônus Delivery", "📋 Ocorrências"])
 
-    # ---- Aba de Resumo de Receita ----
     with tab_revenue:
-        tab_revenue_analysis(start_date, end_date, sales_channel=f_sales_channel , customer_type= f_customer_type, use_estimated=f_use_estimated)
+        tab_revenue_analysis(start_date, end_date, sales_channel=f_sales_channel, customer_type=f_customer_type, use_estimated=f_use_estimated)
 
-    # ---- Aba de Performance de Produtos ----
-    with tab_products:
-        product_df = tab_product_analysis(start_date, end_date, f_sales_channel , customer_type= f_customer_type )
-        
     with tab_oper:
         tab_operational_analysis(sales_channel=f_sales_channel, use_estimated=f_use_estimated)
 
-    with tab_subitem:
-        product_df = tab_subitem_analysis(start_date, end_date, f_sales_channel , customer_type= f_customer_type)
+    with tab_bonus:
+        tab_bonus_analysis(sales_channel=f_sales_channel, use_estimated=f_use_estimated)
+
+    with tab_ocorr:
+        tab_ocorrencias()
 
     # --- Status de Processamento na Barra Lateral ---
     st.sidebar.markdown("---")

@@ -57,7 +57,7 @@ def tab_revenue_analysis(start_date: date, end_date: date, sales_channel: str , 
             df_display = revenue_df.drop(columns=['Faturamento'], errors='ignore')
             selection = st.dataframe(
                 df_display,
-                use_container_width=True,
+                width='stretch',
                 on_select="rerun",
                 selection_mode="single-row",
                 hide_index=True
@@ -74,6 +74,6 @@ def tab_revenue_analysis(start_date: date, end_date: date, sales_channel: str , 
                     # Remove faturamento também do detalhe do dia se existir
                     if 'Faturamento' in transactions_df.columns:
                         transactions_df = transactions_df.drop(columns=['Faturamento'])
-                    st.dataframe(transactions_df, use_container_width=True , hide_index=True)
+                    st.dataframe(transactions_df, width='stretch' , hide_index=True)
     else:
         st.warning("⚠️ Não há dados disponíveis para o período selecionado.")
