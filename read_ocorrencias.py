@@ -46,13 +46,14 @@ def ensure_table_exists():
         bigquery.SchemaField("numero_pedido",    "STRING",    mode="NULLABLE"),
         bigquery.SchemaField("descricao",        "STRING",    mode="NULLABLE"),
         bigquery.SchemaField("created_at",       "TIMESTAMP", mode="REQUIRED"),
+        bigquery.SchemaField("updated_at",       "TIMESTAMP", mode="NULLABLE"),
     ]
     client.create_table(bigquery.Table(table_ref, schema=schema), exists_ok=True)
 
-    for col in ["numero_pedido", "responsavel"]:
+    for col_def in ["numero_pedido STRING", "responsavel STRING", "updated_at TIMESTAMP"]:
         client.query(f"""
             ALTER TABLE `{table_ref}`
-            ADD COLUMN IF NOT EXISTS {col} STRING
+            ADD COLUMN IF NOT EXISTS {col_def}
         """).result()
 
     # Tabela tombstone
@@ -115,7 +116,7 @@ def read_ocorrencias() -> pd.DataFrame:
     client = get_bigquery_client()
     query = f"""
     SELECT o.id, o.canal, o.data_ocorrencia, o.problema,
-           o.erro_operacional, o.responsavel, o.numero_pedido, o.descricao, o.created_at
+           o.erro_operacional, o.responsavel, o.numero_pedido, o.descricao, o.created_at, o.updated_at
     FROM {_full_table(client)} o
     WHERE TRUE
       {_active_filter(client)}
@@ -125,11 +126,12 @@ def read_ocorrencias() -> pd.DataFrame:
         df = client.query(query).to_dataframe()
         if not df.empty:
             df["data_ocorrencia"] = pd.to_datetime(df["data_ocorrencia"]).dt.date
-            df["created_at"] = (
-                pd.to_datetime(df["created_at"])
-                .dt.tz_convert("America/Sao_Paulo")
-                .dt.tz_localize(None)
-            )
+            for ts_col in ["created_at", "updated_at"]:
+                df[ts_col] = (
+                    pd.to_datetime(df[ts_col])
+                    .dt.tz_convert("America/Sao_Paulo")
+                    .dt.tz_localize(None)
+                )
         return df
     except Exception as e:
         st.error(f"Erro ao buscar ocorrências: {e}")
@@ -138,8 +140,10 @@ def read_ocorrencias() -> pd.DataFrame:
 
 def insert_ocorrencia(canal: str, data_ocorrencia, problema: str,
                       erro_operacional: bool, descricao: str,
-                      numero_pedido: str = None, responsavel: str = None):
+                      numero_pedido: str = None, responsavel: str = None,
+                      original_created_at=None):
     client = get_bigquery_client()
+    now = datetime.now(timezone.utc).isoformat()
     row = {
         "id": str(uuid.uuid4()),
         "canal": canal,
@@ -149,7 +153,8 @@ def insert_ocorrencia(canal: str, data_ocorrencia, problema: str,
         "responsavel": responsavel or None,
         "numero_pedido": numero_pedido.strip() if numero_pedido else None,
         "descricao": descricao.strip() if descricao else None,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": original_created_at.isoformat() if original_created_at else now,
+        "updated_at": now if original_created_at else None,
     }
     errors = client.insert_rows_json(f"{client.project}.{DATASET}.{TABLE}", [row])
     if errors:

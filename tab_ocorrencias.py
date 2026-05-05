@@ -123,13 +123,17 @@ def tab_ocorrencias():
         lambda d: d.strftime("%d/%m/%Y")
     )
     df_display["Cadastrado em"] = pd.to_datetime(df_display["created_at"]).dt.strftime("%d/%m/%Y %H:%M")
+    df_display["Atualizado em"] = df_display["updated_at"].apply(
+        lambda v: pd.to_datetime(v).strftime("%d/%m/%Y %H:%M") if pd.notna(v) else "—"
+    )
     df_display["numero_pedido"] = df_display["numero_pedido"].fillna("—")
     df_display["responsavel"]   = df_display["responsavel"].fillna("—")
 
     edited = st.data_editor(
         df_display[[
             "Selecionar", "Data", "canal", "problema", "responsavel",
-            "Erro Operacional", "numero_pedido", "descricao", "Cadastrado em", "id"
+            "Erro Operacional", "numero_pedido", "descricao",
+            "Cadastrado em", "Atualizado em", "id"
         ]],
         column_config={
             "Selecionar":       st.column_config.CheckboxColumn("☑️"),
@@ -141,6 +145,7 @@ def tab_ocorrencias():
             "numero_pedido":    st.column_config.TextColumn("Nº Pedido", disabled=True),
             "descricao":        st.column_config.TextColumn("Descrição", disabled=True),
             "Cadastrado em":    st.column_config.TextColumn("Cadastrado em", disabled=True),
+            "Atualizado em":    st.column_config.TextColumn("Atualizado em", disabled=True),
             "id":               None,
         },
         use_container_width=True,
@@ -195,7 +200,8 @@ def tab_ocorrencias():
             if salvar:
                 try:
                     delete_ocorrencia(st.session_state.editando_id)
-                    insert_ocorrencia(canal, data_oc, problema, erro_op, descricao, numero_pedido, responsavel)
+                    insert_ocorrencia(canal, data_oc, problema, erro_op, descricao, numero_pedido, responsavel,
+                                      original_created_at=row["created_at"])
                     st.session_state.editando_id = None
                     st.success("Ocorrência atualizada com sucesso!")
                     st.rerun()
