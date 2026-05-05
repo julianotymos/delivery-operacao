@@ -2,14 +2,15 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 from read_ocorrencias import (
-    ensure_table_exists, read_ocorrencias, insert_ocorrencia,
-    delete_ocorrencia, CANAIS, PROBLEMAS
+    ensure_table_exists, read_ocorrencias, read_responsaveis,
+    insert_ocorrencia, delete_ocorrencia, CANAIS, PROBLEMAS
 )
 
 
 def _form_ocorrencia(key_prefix: str, defaults: dict = None):
-    """Renderiza os campos do formulário. Retorna (canal, data, problema, erro_op, numero_pedido, descricao)."""
+    """Renderiza os campos do formulário. Retorna (canal, data, problema, erro_op, responsavel, numero_pedido, descricao)."""
     d = defaults or {}
+    responsaveis = read_responsaveis()
 
     problema_idx = PROBLEMAS.index(d["problema"]) if d.get("problema") in PROBLEMAS else 0
     problema = st.selectbox("Problema *", PROBLEMAS, index=problema_idx, key=f"{key_prefix}_problema")
@@ -25,6 +26,8 @@ def _form_ocorrencia(key_prefix: str, defaults: dict = None):
             key=f"{key_prefix}_data"
         )
     with col2:
+        resp_idx = responsaveis.index(d["responsavel"]) if d.get("responsavel") in responsaveis else 0
+        responsavel = st.selectbox("Responsável *", responsaveis, index=resp_idx, key=f"{key_prefix}_responsavel")
         erro_op = st.radio(
             "Erro operacional *",
             options=[True, False],
@@ -34,15 +37,16 @@ def _form_ocorrencia(key_prefix: str, defaults: dict = None):
             help="'Sim' = conta como penalidade de R$ 8,00 no bônus",
             key=f"{key_prefix}_erro_op"
         )
-        numero_pedido = None
-        if not is_fechamento:
-            numero_pedido = st.text_input(
-                "Número do Pedido",
-                value=d.get("numero_pedido", "") or "",
-                placeholder="Ex: 123456789",
-                max_chars=50,
-                key=f"{key_prefix}_num_pedido"
-            )
+
+    numero_pedido = None
+    if not is_fechamento:
+        numero_pedido = st.text_input(
+            "Número do Pedido",
+            value=d.get("numero_pedido", "") or "",
+            placeholder="Ex: 123456789",
+            max_chars=50,
+            key=f"{key_prefix}_num_pedido"
+        )
 
     descricao = st.text_area(
         "Descrição",
@@ -52,7 +56,7 @@ def _form_ocorrencia(key_prefix: str, defaults: dict = None):
         key=f"{key_prefix}_descricao"
     )
 
-    return canal, data_oc, problema, erro_op, numero_pedido, descricao
+    return canal, data_oc, problema, erro_op, responsavel, numero_pedido, descricao
 
 
 def tab_ocorrencias():
@@ -67,12 +71,12 @@ def tab_ocorrencias():
     # ── FORMULÁRIO DE CADASTRO ──────────────────────────────────────────────
     with st.expander("➕ Nova ocorrência", expanded=False):
         with st.form("form_nova_ocorrencia", clear_on_submit=True):
-            canal, data_oc, problema, erro_op, numero_pedido, descricao = _form_ocorrencia("novo")
+            canal, data_oc, problema, erro_op, responsavel, numero_pedido, descricao = _form_ocorrencia("novo")
             submitted = st.form_submit_button("💾 Salvar ocorrência", type="primary")
 
         if submitted:
             try:
-                insert_ocorrencia(canal, data_oc, problema, erro_op, descricao, numero_pedido)
+                insert_ocorrencia(canal, data_oc, problema, erro_op, descricao, numero_pedido, responsavel)
                 st.success("Ocorrência registrada com sucesso!")
                 st.rerun()
             except Exception as e:
@@ -120,10 +124,11 @@ def tab_ocorrencias():
     )
     df_display["Cadastrado em"] = pd.to_datetime(df_display["created_at"]).dt.strftime("%d/%m/%Y %H:%M")
     df_display["numero_pedido"] = df_display["numero_pedido"].fillna("—")
+    df_display["responsavel"]   = df_display["responsavel"].fillna("—")
 
     edited = st.data_editor(
         df_display[[
-            "Selecionar", "Data", "canal", "problema",
+            "Selecionar", "Data", "canal", "problema", "responsavel",
             "Erro Operacional", "numero_pedido", "descricao", "Cadastrado em", "id"
         ]],
         column_config={
@@ -131,6 +136,7 @@ def tab_ocorrencias():
             "Data":             st.column_config.TextColumn("Data", disabled=True),
             "canal":            st.column_config.TextColumn("Canal", disabled=True),
             "problema":         st.column_config.TextColumn("Problema", disabled=True),
+            "responsavel":      st.column_config.TextColumn("Responsável", disabled=True),
             "Erro Operacional": st.column_config.TextColumn("Erro Operacional", disabled=True),
             "numero_pedido":    st.column_config.TextColumn("Nº Pedido", disabled=True),
             "descricao":        st.column_config.TextColumn("Descrição", disabled=True),
@@ -170,14 +176,15 @@ def tab_ocorrencias():
 
             with st.form("form_editar_ocorrencia"):
                 defaults = {
-                    "canal":           row["canal"],
-                    "data_ocorrencia": row["data_ocorrencia"],
-                    "problema":        row["problema"],
+                    "canal":            row["canal"],
+                    "data_ocorrencia":  row["data_ocorrencia"],
+                    "problema":         row["problema"],
                     "erro_operacional": bool(row["erro_operacional"]),
-                    "numero_pedido":   row["numero_pedido"] if row["numero_pedido"] != "—" else "",
-                    "descricao":       row["descricao"],
+                    "responsavel":      row.get("responsavel", ""),
+                    "numero_pedido":    row["numero_pedido"] if row["numero_pedido"] != "—" else "",
+                    "descricao":        row["descricao"],
                 }
-                canal, data_oc, problema, erro_op, numero_pedido, descricao = _form_ocorrencia("edit", defaults)
+                canal, data_oc, problema, erro_op, responsavel, numero_pedido, descricao = _form_ocorrencia("edit", defaults)
 
                 col_btn1, col_btn2 = st.columns(2)
                 with col_btn1:
@@ -188,7 +195,7 @@ def tab_ocorrencias():
             if salvar:
                 try:
                     delete_ocorrencia(st.session_state.editando_id)
-                    insert_ocorrencia(canal, data_oc, problema, erro_op, descricao, numero_pedido)
+                    insert_ocorrencia(canal, data_oc, problema, erro_op, descricao, numero_pedido, responsavel)
                     st.session_state.editando_id = None
                     st.success("Ocorrência atualizada com sucesso!")
                     st.rerun()
