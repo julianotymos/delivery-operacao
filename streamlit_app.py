@@ -63,7 +63,7 @@ else:
         tab_bonus_analysis(sales_channel=f_sales_channel, use_estimated=f_use_estimated)
 
     with tab_ocorr:
-        tab_ocorrencias()
+        tab_ocorrencias(sales_channel=f_sales_channel)
 
     # --- Status de Processamento na Barra Lateral ---
     st.sidebar.markdown("---")
